@@ -9,7 +9,7 @@ import axios from "axios"
 // });
 
 const axiosClient =  axios.create({
-    baseURL: 'https://lpuquora-backend.onrender.com',
+    baseURL: 'https://algojudge-backend.onrender.com',
     withCredentials: true,
     headers: {
         'Content-Type': 'application/json'
