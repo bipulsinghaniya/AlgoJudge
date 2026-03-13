@@ -2,9 +2,11 @@ const {getLanguageById,submitBatch,submitToken} = require("../utils/problemUtili
 const Problem = require("../models/problem");
 const User = require("../models/user");
 const Submission = require("../models/submission");
+const SolutionVideo = require("../models/solutionVideo")
 
 const createProblem = async (req,res)=>{
-
+   
+  // API request to authenticate user:
     const {title,description,difficulty,tags,
         visibleTestCases,hiddenTestCases,startCode,
         referenceSolution, problemCreator
@@ -168,11 +170,27 @@ const getProblemById = async(req,res)=>{
 
     const getProblem = await Problem.findById(id).select('_id title description difficulty tags visibleTestCases startCode referenceSolution ');
    
+    // video ka jo bhi url wagera le aao
+
    if(!getProblem)
     return res.status(404).send("Problem is Missing");
 
+   const videos = await SolutionVideo.findOne({problemId:id});
 
+   if(videos){   
+    
+   const responseData = {
+    ...getProblem.toObject(),
+    secureUrl:videos.secureUrl,
+    thumbnailUrl : videos.thumbnailUrl,
+    duration : videos.duration,
+   } 
+  
+   return res.status(200).send(responseData);
+   }
+    
    res.status(200).send(getProblem);
+
   }
   catch(err){
     res.status(500).send("Error: "+err);
@@ -223,7 +241,7 @@ const submittedProblem = async(req,res)=>{
     const userId = req.result._id;
     const problemId = req.params.pid;
 
-  const ans = await Submission.find({userId,problemId});
+   const ans = await Submission.find({userId,problemId});
   
   if(ans.length==0)
     res.status(200).send("No Submission is persent");
