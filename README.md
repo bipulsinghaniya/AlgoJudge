@@ -159,20 +159,6 @@ cd frontend
 npm install
 npm run dev
 ```
-
----
-
-# 📸 Screenshots
-
-### Problem List Page
-(Add screenshot here)
-
-### Code Editor
-(Add screenshot here)
-
-### Submission Result
-(Add screenshot here)
-
 ---
 
 # 🚀 Future Improvements
