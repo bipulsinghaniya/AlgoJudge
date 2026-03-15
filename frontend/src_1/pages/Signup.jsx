@@ -1,28 +1,28 @@
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, NavLink } from 'react-router'; 
-import { loginUser } from "../authSlice";
-import { useEffect, useState } from 'react';
+import { useNavigate, NavLink } from 'react-router';
+import { registerUser } from '../authSlice';
 
-
-const loginSchema = z.object({
+const signupSchema = z.object({
+  firstName: z.string().min(3, "Minimum character should be 3"),
   emailId: z.string().email("Invalid Email"),
-  password: z.string().min(8, "Password is too weak") 
+  password: z.string().min(8, "Password is too weak")
 });
 
-function Login() {
+function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { isAuthenticated, loading, error } = useSelector((state) => state.auth);
-  
+  const { isAuthenticated, loading } = useSelector((state) => state.auth); // Removed error as it wasn't used
+
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm({ resolver: zodResolver(loginSchema) }); // Using renamed schema
+  } = useForm({ resolver: zodResolver(signupSchema) });
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -31,25 +31,40 @@ function Login() {
   }, [isAuthenticated, navigate]);
 
   const onSubmit = (data) => {
-    dispatch(loginUser(data));
+    dispatch(registerUser(data));
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-base-200"> {/* Added bg for contrast */}
+    <div className="min-h-screen flex items-center justify-center p-4 bg-base-200"> {/* Added a light bg for contrast */}
       <div className="card w-96 bg-base-100 shadow-xl">
         <div className="card-body">
-          <h2 className="card-title justify-center text-3xl mb-6">AlgoJudge</h2> {/* Added mb-6 */}
-
-          
+          <h2 className="card-title justify-center text-3xl mb-6">AlgoJudge</h2> {/* Added mb-6 for spacing */}
           <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="form-control"> {/* Removed mt-4 from first form-control for tighter spacing to title or global error */}
-              <label className="label"> {/* Removed mb-1, default spacing should be fine */}
+            {/* First Name Field */}
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text">First Name</span>
+              </label>
+              <input
+                type="text"
+                placeholder="John"
+                className={`input input-bordered w-full ${errors.firstName ? 'input-error' : ''}`} 
+                {...register('firstName')}
+              />
+              {errors.firstName && (
+                <span className="text-error text-sm mt-1">{errors.firstName.message}</span>
+              )}
+            </div>
+
+            {/* Email Field */}
+            <div className="form-control mt-4">
+              <label className="label">
                 <span className="label-text">Email</span>
               </label>
               <input
                 type="email"
                 placeholder="john@example.com"
-                className={`input input-bordered w-full ${errors.emailId ? 'input-error' : ''}`} 
+                className={`input input-bordered w-full ${errors.emailId ? 'input-error' : ''}`} // Ensure w-full for consistency
                 {...register('emailId')}
               />
               {errors.emailId && (
@@ -57,6 +72,7 @@ function Login() {
               )}
             </div>
 
+            {/* Password Field with Toggle */}
             <div className="form-control mt-4">
               <label className="label">
                 <span className="label-text">Password</span>
@@ -65,14 +81,15 @@ function Login() {
                 <input
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
+                  // Added pr-10 (padding-right) to make space for the button
                   className={`input input-bordered w-full pr-10 ${errors.password ? 'input-error' : ''}`}
                   {...register('password')}
                 />
                 <button
                   type="button"
-                  className="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute top-1/2 right-3 transform -translate-y-1/2 text-gray-500 hover:text-gray-700" // Added transform for better centering, styling
                   onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-label={showPassword ? "Hide password" : "Show password"} // Accessibility
                 >
                   {showPassword ? (
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -91,26 +108,24 @@ function Login() {
               )}
             </div>
 
-            <div className="form-control mt-8 flex justify-center">
+            {/* Submit Button */}
+            <div className="form-control mt-8 flex justify-center"> 
               <button
                 type="submit"
-                className={`btn btn-primary ${loading ? 'loading btn-disabled' : ''}`} // Added btn-disabled for better UX with loading
+                className={`btn btn-primary ${loading ? 'loading' : ''}`}
                 disabled={loading}
               >
-                {loading ? (
-                  <>
-                    <span className="loading loading-spinner"></span>
-                    Logging in...
-                  </>
-                ) : 'Login'}
+                {loading ? 'Signing Up...' : 'Sign Up'}
               </button>
             </div>
           </form>
-          <div className="text-center mt-6">
+
+          {/* Login Redirect */}
+          <div className="text-center mt-6"> {/* Increased mt for spacing */}
             <span className="text-sm">
-              Don't have an account?{' '} {/* Adjusted text slightly */}
-              <NavLink to="/signup" className="link link-primary">
-                Sign Up
+              Already have an account?{' '}
+              <NavLink to="/login" className="link link-primary">
+                Login
               </NavLink>
             </span>
           </div>
@@ -120,4 +135,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default Signup;

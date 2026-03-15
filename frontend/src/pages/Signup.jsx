@@ -13,6 +13,7 @@ const signupSchema = z.object({
 });
 
 function Signup() {
+
   const [showPassword, setShowPassword] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -39,18 +40,16 @@ function Signup() {
       <div className="card w-96 bg-base-100 shadow-xl">
         <div className="card-body">
           <h2 className="card-title justify-center text-3xl mb-6">AlgoJudge</h2> {/* Added mb-6 for spacing */}
+
+          
           <form onSubmit={handleSubmit(onSubmit)}>
             {/* First Name Field */}
             <div className="form-control">
               <label className="label">
                 <span className="label-text">First Name</span>
               </label>
-              <input
-                type="text"
-                placeholder="John"
-                className={`input input-bordered w-full ${errors.firstName ? 'input-error' : ''}`} 
-                {...register('firstName')}
-              />
+              <input type="text" placeholder="John" className={`input input-bordered w-full
+               ${errors.firstName ? 'input-error' : ''}`}  {...register('firstName')} />
               {errors.firstName && (
                 <span className="text-error text-sm mt-1">{errors.firstName.message}</span>
               )}

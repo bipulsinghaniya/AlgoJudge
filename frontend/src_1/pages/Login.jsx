@@ -17,7 +17,6 @@ function Login() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { isAuthenticated, loading, error } = useSelector((state) => state.auth);
-  
   const {
     register,
     handleSubmit,
