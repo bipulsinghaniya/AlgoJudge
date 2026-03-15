@@ -21,7 +21,7 @@ console.log("Hello")
 app.use(
   cors({
     origin: [
-      "http://localhost:5173",
+      // "http://localhost:5173",
       "https://algojudge-frontend.onrender.com"
     ],
     credentials: true
