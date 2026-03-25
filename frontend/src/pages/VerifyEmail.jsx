@@ -236,7 +236,7 @@ export default function VerifyEmail() {
   const Navbar = (
     <nav style={S.nav}>
       <div style={S.navLogo}>LPU</div>
-      <span style={S.navTitle}>LPU Quora</span>
+      <span style={S.navTitle}>AlgoJudge</span>
     </nav>
   );
 

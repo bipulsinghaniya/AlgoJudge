@@ -11,7 +11,7 @@ const sendEmail = async ({ email, subject, html }) => {
 
   const payload = {
     sender: {
-      name: "LPU Quora",
+      name: "AlgoJudge",
       email: senderEmail,
     },
     to: [{ email }],
