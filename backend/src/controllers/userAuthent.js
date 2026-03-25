@@ -4,47 +4,183 @@ const validate = require('../utils/validator');
 const bcrypt = require("bcrypt");
 const jwt = require('jsonwebtoken');
 const Submission = require("../models/submission")
+const sendEmail = require("../utils/sendEmail");
 
 
-const register = async (req,res)=>{
+
+// const register = async (req,res)=>{
     
-    try{
-        // validate the data;
+//     try{
+//         // validate the data;
 
-      validate(req.body); 
-      const {firstName, emailId, password}  = req.body;
+//       validate(req.body); 
+//       const {firstName, emailId, password}  = req.body;
 
-      req.body.password = await bcrypt.hash(password, 10);
-      req.body.role = 'user'
-    //
+//       req.body.password = await bcrypt.hash(password, 10);
+//       req.body.role = 'user'
+//     //
     
-     const user =  await User.create(req.body);
-     const token =  jwt.sign({_id:user._id , emailId:emailId, role:'user'},process.env.JWT_KEY,{expiresIn: 60*60});
-     const reply = {
+//      const user =  await User.create(req.body);
+//      const token =  jwt.sign({_id:user._id , emailId:emailId, role:'user'},process.env.JWT_KEY,{expiresIn: 60*60});
+//      const reply = {
+//         firstName: user.firstName,
+//         emailId: user.emailId,
+//         _id: user._id,
+//         role:user.role,
+//     }
+    
+//     //  res.cookie('token',token,{maxAge: 60*60*1000});
+
+//  res.cookie("token", token, {
+//   httpOnly: true,
+//   secure: true,
+//   sameSite: "none",
+//   path: "/",
+//   maxAge: 60 * 60 * 1000
+// });
+//      res.status(201).json({
+//         user:reply,
+//         message:"Loggin Successfully"
+//     })
+//     }
+//     catch(err){
+//         res.status(400).send("Error: "+err);
+//     }
+// }
+
+
+
+
+
+const register = async (req, res) => {
+  try {
+    const { firstName, emailId, password } = req.body;
+
+    // 1. Validate
+    if (!firstName || !emailId || !password) {
+      return res.status(400).json({
+        message: "All fields are required"
+      });
+    }
+
+    // 2. Check existing user
+    const existingUser = await User.findOne({ emailId });
+    if (existingUser) {
+      return res.status(400).json({
+        message: "Email already registered"
+      });
+    }
+
+    // 3. Cooldown check
+    const cooldown = await redisClient.get(`otp_cooldown:${emailId}`);
+    if (cooldown) {
+      return res.status(400).json({
+        message: "Wait 30 seconds before retry"
+      });
+    }
+
+    await redisClient.set(`otp_cooldown:${emailId}`, "1", { EX: 30 });
+
+    // 4. Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // 5. Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // 6. Store in Redis
+    await redisClient.set(
+      `otp:${emailId}`,
+      JSON.stringify({
+        firstName,
+        emailId,
+        hashedPassword,
+        otp,
+      }),
+      { EX: 600 }
+    );
+
+    console.log("OTP:", otp);
+
+    // 7. Send Email
+    await sendEmail({
+      email: emailId,
+      subject: "Verify your email",
+      html: `<h2>Your OTP: ${otp}</h2>`,
+    });
+
+    res.status(200).json({
+      message: "OTP sent to email"
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      message: "Registration failed"
+    });
+  }
+};
+
+
+const verifyOTP = async (req, res) => {
+  try {
+    const { emailId, otp } = req.body;
+
+    // 1. Get data from Redis
+    const data = await redisClient.get(`otp:${emailId}`);
+    if (!data) {
+      return res.status(400).json({
+        message: "OTP expired"
+      });
+    }
+    
+    const parsedData = JSON.parse(data);
+    
+    
+    
+    // 2. Check OTP
+    if (parsedData.otp !== otp.toString()) {
+      return res.status(400).json({
+        message: "Invalid OTP"
+      });
+    }
+    
+
+    // 3. Create user
+    const user = await User.create({
+      firstName: parsedData.firstName,
+      emailId: parsedData.emailId,
+      password: parsedData.hashedPassword,
+      role: "user",
+    });
+
+    // 4. Generate JWT
+    const token = jwt.sign(
+      { _id: user._id, emailId: user.emailId, role: "user" },
+      process.env.JWT_KEY,
+      { expiresIn: "1h" }
+    );
+
+    // 5. Set cookie
+    res.cookie("token", token, { maxAge: 60 * 60 * 1000 });
+
+    // 6. Delete OTP from Redis
+    await redisClient.del(`otp:${emailId}`);
+
+    res.status(201).json({
+      message: "User registered successfully",
+      user: {
         firstName: user.firstName,
         emailId: user.emailId,
         _id: user._id,
-        role:user.role,
-    }
-    
-    //  res.cookie('token',token,{maxAge: 60*60*1000});
+        role: user.role,
+      }
+    });
 
- res.cookie("token", token, {
-  httpOnly: true,
-  secure: true,
-  sameSite: "none",
-  path: "/",
-  maxAge: 60 * 60 * 1000
-});
-     res.status(201).json({
-        user:reply,
-        message:"Loggin Successfully"
-    })
-    }
-    catch(err){
-        res.status(400).send("Error: "+err);
-    }
-}
+  } catch (err) {
+    res.status(500).json({
+      message: "OTP verification failed"
+    });
+  }
+};
 
 
 const login = async (req,res)=>{

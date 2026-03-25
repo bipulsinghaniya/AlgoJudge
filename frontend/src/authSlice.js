@@ -5,7 +5,8 @@ export const registerUser = createAsyncThunk('auth/register',
   async (userData, { rejectWithValue }) => {
     try {
     const response =  await axiosClient.post('/user/register', userData);
-    return response.data.user;
+    // return response.data.user;
+    return response.data; // otp
     } catch (error) {
       return rejectWithValue(error);
     }
@@ -71,8 +72,12 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false;
-        state.isAuthenticated = !!action.payload;
-        state.user = action.payload;
+        // state.isAuthenticated = !!action.payload; 
+                state.isAuthenticated = false; // otp 
+
+        // state.user = action.payload;
+          state.user = null; // otp
+
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;

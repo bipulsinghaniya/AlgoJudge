@@ -31,9 +31,27 @@ function Signup() {
     }
   }, [isAuthenticated, navigate]);
 
-  const onSubmit = (data) => {
-    dispatch(registerUser(data));
-  };
+  // const onSubmit = (data) => {
+  //   dispatch(registerUser(data));
+  // };
+
+
+    // otp
+const onSubmit = async (data) => {
+  try {
+    const res = await dispatch(registerUser(data)).unwrap();
+
+    alert(res.message);
+
+    navigate("/verify-email", {
+      state: { email: data.emailId },
+    });
+
+  } catch (err) {
+    console.log(err);
+  }
+};
+
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-base-200"> {/* Added a light bg for contrast */}
