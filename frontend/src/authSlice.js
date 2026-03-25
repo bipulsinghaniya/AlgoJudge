@@ -8,7 +8,11 @@ export const registerUser = createAsyncThunk('auth/register',
     // return response.data.user;
     return response.data; // otp
     } catch (error) {
-      return rejectWithValue(error);
+      // return rejectWithValue(error);
+      return rejectWithValue(
+  error.response?.data || { message: "Invalid email or password" }
+);
+      
     }
   }
 );
@@ -21,7 +25,10 @@ export const loginUser = createAsyncThunk(
       const response = await axiosClient.post('/user/login', credentials);
       return response.data.user;
     } catch (error) {
-      return rejectWithValue(error);
+      // return rejectWithValue(error);
+      return rejectWithValue(
+  error.response?.data || { message: "Invalid email or password" }
+);
     }
   }
 );
@@ -36,7 +43,10 @@ export const checkAuth = createAsyncThunk(
       if (error.response?.status === 401) {
         return rejectWithValue(null); // Special case for no session
       }
-      return rejectWithValue(error);
+      // return rejectWithValue(error);
+      return rejectWithValue(
+  error.response?.data || { message: "Invalid email or password" }
+);
     }
   }
 );
@@ -48,7 +58,10 @@ export const logoutUser = createAsyncThunk(
       await axiosClient.post('/user/logout');
       return null;
     } catch (error) {
-      return rejectWithValue(error);
+      // return rejectWithValue(error);
+      return rejectWithValue(
+  error.response?.data || { message: "Invalid email or password" }
+);
     }
   }
 );
@@ -61,8 +74,11 @@ const authSlice = createSlice({
     loading: false,
     error: null
   },
-  reducers: {
-  },
+reducers: {
+  clearError: (state) => {
+    state.error = null;
+  }
+},
   extraReducers: (builder) => {
     builder
       // Register User Cases
@@ -113,12 +129,26 @@ const authSlice = createSlice({
         state.isAuthenticated = !!action.payload;
         state.user = action.payload;
       })
+      // .addCase(checkAuth.rejected, (state, action) => {
+      //   state.loading = false;
+      //   state.error = action.payload?.message || 'Something went wrong';
+      //   state.isAuthenticated = false;
+      //   state.user = null;
+      // })
+
+
       .addCase(checkAuth.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload?.message || 'Something went wrong';
-        state.isAuthenticated = false;
-        state.user = null;
-      })
+  state.loading = false;
+  state.isAuthenticated = false;
+  state.user = null;
+
+  // 🔥 IMPORTANT FIX
+  if (action.payload === null) {
+    state.error = null; // not logged in → NOT error
+  } else {
+    state.error = action.payload?.message || 'Something went wrong';
+  }
+})
   
       // Logout User Cases
       .addCase(logoutUser.pending, (state) => {
@@ -141,3 +171,4 @@ const authSlice = createSlice({
 });
 
 export default authSlice.reducer;
+export const { clearError } = authSlice.actions;

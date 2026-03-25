@@ -8,50 +8,6 @@ const sendEmail = require("../utils/sendEmail");
 
 
 
-// const register = async (req,res)=>{
-    
-//     try{
-//         // validate the data;
-
-//       validate(req.body); 
-//       const {firstName, emailId, password}  = req.body;
-
-//       req.body.password = await bcrypt.hash(password, 10);
-//       req.body.role = 'user'
-//     //
-    
-//      const user =  await User.create(req.body);
-//      const token =  jwt.sign({_id:user._id , emailId:emailId, role:'user'},process.env.JWT_KEY,{expiresIn: 60*60});
-//      const reply = {
-//         firstName: user.firstName,
-//         emailId: user.emailId,
-//         _id: user._id,
-//         role:user.role,
-//     }
-    
-//     //  res.cookie('token',token,{maxAge: 60*60*1000});
-
-//  res.cookie("token", token, {
-//   httpOnly: true,
-//   secure: true,
-//   sameSite: "none",
-//   path: "/",
-//   maxAge: 60 * 60 * 1000
-// });
-//      res.status(201).json({
-//         user:reply,
-//         message:"Loggin Successfully"
-//     })
-//     }
-//     catch(err){
-//         res.status(400).send("Error: "+err);
-//     }
-// }
-
-
-
-
-
 const register = async (req, res) => {
   try {
     const { firstName, emailId, password } = req.body;
@@ -183,6 +139,7 @@ const verifyOTP = async (req, res) => {
 };
 
 
+
 const login = async (req,res)=>{
 
     try{
@@ -208,18 +165,7 @@ const login = async (req,res)=>{
         }
 
         const token =  jwt.sign({_id:user._id , emailId:emailId, role:user.role},process.env.JWT_KEY,{expiresIn: 60*60});
-
-        // res.cookie('token',token,{maxAge: 60*60*1000});
-
-   res.cookie("token", token, {
-  httpOnly: true,
-  secure: true,
-  sameSite: "none",
-  path: "/",
-  maxAge: 60 * 60 * 1000
-});
-
-
+        res.cookie('token',token,{maxAge: 60*60*1000});
         res.status(201).json({
             user:reply,
             message:"Loggin Successfully"
@@ -229,6 +175,7 @@ const login = async (req,res)=>{
         res.status(401).send("Error: "+err);
     }
 }
+
 
 // logOut feature
 
@@ -244,14 +191,7 @@ const logout = async(req,res)=>{
     //    Token add kar dung Redis ke blockList
     //    Cookies ko clear kar dena.....
 
-    // res.cookie("token",null,{expires: new Date(Date.now())});
-
-    res.cookie("token", null, {
-  httpOnly: true,
-  secure: true,
-  sameSite: "none",
-  expires: new Date(Date.now())
-});
+    res.cookie("token",null,{expires: new Date(Date.now())});
     res.send("Logged Out Succesfully");
 
     }
@@ -274,15 +214,7 @@ const adminRegister = async(req,res)=>{
     
      const user =  await User.create(req.body);
      const token =  jwt.sign({_id:user._id , emailId:emailId, role:user.role},process.env.JWT_KEY,{expiresIn: 60*60});
-    //  res.cookie('token',token,{maxAge: 60*60*1000});
-
-    res.cookie("token", token, {
-  httpOnly: true,
-  secure: true,
-  sameSite: "none",
-  path: "/",
-  maxAge: 60 * 60 * 1000
-});
+     res.cookie('token',token,{maxAge: 60*60*1000});
      res.status(201).send("User Registered Successfully");
     }
     catch(err){
@@ -312,4 +244,4 @@ const deleteProfile = async(req,res)=>{
 }
 
 
-module.exports = {register, login,logout,adminRegister,deleteProfile};
+module.exports = {register, login,logout,adminRegister,deleteProfile, verifyOTP};

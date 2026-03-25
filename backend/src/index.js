@@ -19,6 +19,8 @@ console.log("Hello")
 
 // }))
 
+console.log("i am insidlee idex.js");
+
 app.use(
   cors({
     origin: [
