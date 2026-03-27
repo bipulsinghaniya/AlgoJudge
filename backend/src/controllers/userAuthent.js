@@ -160,6 +160,12 @@ const login = async (req,res)=>{
 
         const user = await User.findOne({emailId});
 
+        if (!user) {
+      return res.status(401).json({
+        message: "Invalid credentials"
+      });
+    }
+
         const match = await bcrypt.compare(password,user.password);
 
         if(!match)
@@ -177,8 +183,10 @@ const login = async (req,res)=>{
 
         res.cookie("token", token, {
   httpOnly: true,
-  secure: true,
-  sameSite: "None",
+  secure: true, // render
+  // secure:false,// localhost
+  sameSite: "None", // render
+  //  sameSite: "Lax",     // localhost
   maxAge: 60 * 60 * 1000,
   path: "/"
 });
@@ -188,12 +196,77 @@ const login = async (req,res)=>{
         })
     }
     catch(err){
-        res.status(401).send("Error: "+err);
+        // res.status(401).send("Error: "+err);
+        res.status(401).json({
+  message: "Invalid credentials"
+});
     }
 }
 
 
 // logOut feature
+
+// const login = async (req, res) => {
+//   try {
+//     const { emailId, password } = req.body;
+
+//     if (!emailId || !password) {
+//       return res.status(401).json({
+//         message: "Invalid credentials"
+//       });
+//     }
+
+//     const user = await User.findOne({ emailId });
+
+//     if (!user) {
+//       return res.status(401).json({
+//         message: "Invalid credentials"
+//       });
+//     }
+
+//     const match = await bcrypt.compare(password, user.password);
+
+//     if (!match) {
+//       return res.status(401).json({
+//         message: "Invalid credentials"
+//       });
+//     }
+
+//     const reply = {
+//       firstName: user.firstName,
+//       emailId: user.emailId,
+//       _id: user._id,
+//       role: user.role,
+//     };
+
+//     const token = jwt.sign(
+//       { _id: user._id, emailId, role: user.role },
+//       process.env.JWT_KEY,
+//       { expiresIn: "1h" }
+//     );
+
+//     res.cookie("token", token, {
+//       httpOnly: true,
+//       secure: false,        // 🔥 change for localhost
+//       sameSite: "Lax",      // 🔥 change for localhost
+//       maxAge: 60 * 60 * 1000,
+//       path: "/"
+//     });
+
+//     res.status(200).json({
+//       user: reply,
+//       message: "Login Successfully"
+//     });
+
+//   } catch (err) {
+//     res.status(500).json({
+//       message: "Server error"
+//     });
+//   }
+// };
+
+
+
 
 const logout = async(req,res)=>{
 
