@@ -163,11 +163,13 @@ function Login() {
     }
   }, [isAuthenticated, navigate]);
 
-  useEffect(() => {
-  dispatch(clearError());
-}, [dispatch]);
+//   useEffect(() => {
+//   dispatch(clearError());
+// }, [dispatch]);
+
 
   const onSubmit = (data) => {
+      console.log("FORM SUBMITTED", data); // 🔥 ADD THIS
     dispatch(loginUser(data));
   };
 

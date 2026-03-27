@@ -4,18 +4,40 @@ import axiosClient from './utils/axiosClient'
 export const registerUser = createAsyncThunk('auth/register',
   async (userData, { rejectWithValue }) => {
     try {
+        console.log("hello world in authSlice in line 7");
+
     const response =  await axiosClient.post('/user/register', userData);
     // return response.data.user;
     return response.data; // otp
     } catch (error) {
       // return rejectWithValue(error);
-      return rejectWithValue(
-  error.response?.data || { message: "Invalid email or password" }
-);
+    if (error.response) {
+  return rejectWithValue(error.response.data.message);
+} else {
+  console.log("hello world in authSlice in line 15");
+  return rejectWithValue("Server not responding");
+}
       
     }
   }
 );
+
+
+// export const loginUser = createAsyncThunk(
+//   'auth/login',
+//   async (credentials, { rejectWithValue }) => {
+//     try {
+//       const response = await axiosClient.post('/user/login', credentials);
+//       return response.data.user;
+//     } catch (error) {
+//       // return rejectWithValue(error);
+//       return rejectWithValue(
+//   // error.response?.data || { message: "Invalid email or password" }
+//     error.response?.data?.message || "Invalid email or password"
+// );
+//     }
+//   }
+// );
 
 
 export const loginUser = createAsyncThunk(
@@ -23,16 +45,16 @@ export const loginUser = createAsyncThunk(
   async (credentials, { rejectWithValue }) => {
     try {
       const response = await axiosClient.post('/user/login', credentials);
-      return response.data.user;
+
+      return response.data; // 🔥 IMPORTANT (not .user)
+
     } catch (error) {
-      // return rejectWithValue(error);
       return rejectWithValue(
-  error.response?.data || { message: "Invalid email or password" }
-);
+        error.response?.data?.message || "Invalid credentials"
+      );
     }
   }
 );
-
 export const checkAuth = createAsyncThunk(
   'auth/check',
   async (_, { rejectWithValue }) => {
@@ -97,7 +119,16 @@ reducers: {
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload?.message || 'Something went wrong';
+        // state.error = action.payload?.message || 'Something went wrong';
+        // state.error = action.payload || 'Something went wrong';
+
+        console.log("ERROR PAYLOAD:", action.payload);
+
+        state.error =
+  typeof action.payload === "string"
+    ? action.payload
+    : action.payload?.message || "Something went wrong";
+
         state.isAuthenticated = false;
         state.user = null;
       })
@@ -107,17 +138,33 @@ reducers: {
         state.loading = true;
         state.error = null;
       })
+      // .addCase(loginUser.fulfilled, (state, action) => {
+      //   state.loading = false;
+      //   state.isAuthenticated = !!action.payload;
+      //   state.user = action.payload;
+      // })
       .addCase(loginUser.fulfilled, (state, action) => {
-        state.loading = false;
-        state.isAuthenticated = !!action.payload;
-        state.user = action.payload;
-      })
+  state.loading = false;
+  state.isAuthenticated = true;
+
+  state.user = action.payload.user; // 🔥 FIX
+})
+      // .addCase(loginUser.rejected, (state, action) => {
+      //   state.loading = false;
+      //   state.error = action.payload?.message || 'Something went wrong';
+      //   state.isAuthenticated = false;
+      //   state.user = null;
+      // })
+
       .addCase(loginUser.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload?.message || 'Something went wrong';
-        state.isAuthenticated = false;
-        state.user = null;
-      })
+  state.loading = false;
+
+  console.log("REJECTED:", action); // 🔥 DEBUG
+
+  state.error = action.payload || action.error.message;
+  state.isAuthenticated = false;
+  state.user = null;
+})
   
       // Check Auth Cases
       .addCase(checkAuth.pending, (state) => {
