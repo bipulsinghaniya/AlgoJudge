@@ -42,6 +42,7 @@ AlgoJudge is a full-stack web application that allows users to practice coding p
 * Redux Toolkit
 * Tailwind CSS / DaisyUI
 * Axios
+* daisy ui
 
 ### Backend
 
