@@ -171,5 +171,4 @@ Contributions are welcome! Feel free to fork the repo and submit a PR.
 ---
 
 ## ⭐ Support
-
 If you like this project, please give it a ⭐ on GitHub!
