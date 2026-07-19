@@ -55,6 +55,20 @@ export const loginUser = createAsyncThunk(
     }
   }
 );
+
+export const googleLogin = createAsyncThunk(
+  'auth/googleLogin',
+  async (token, { rejectWithValue }) => {
+    try {
+      const response = await axiosClient.post('/user/google', { token });
+      return response.data; // returns user
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Google authentication failed"
+      );
+    }
+  }
+);
 export const checkAuth = createAsyncThunk(
   'auth/check',
   async (_, { rejectWithValue }) => {
@@ -165,6 +179,23 @@ reducers: {
   state.isAuthenticated = false;
   state.user = null;
 })
+
+      // Google Login Cases
+      .addCase(googleLogin.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(googleLogin.fulfilled, (state, action) => {
+        state.loading = false;
+        state.isAuthenticated = true;
+        state.user = action.payload.user; 
+      })
+      .addCase(googleLogin.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || "Google authentication failed";
+        state.isAuthenticated = false;
+        state.user = null;
+      })
   
       // Check Auth Cases
       .addCase(checkAuth.pending, (state) => {

@@ -5,6 +5,7 @@ const bcrypt = require("bcrypt");
 const jwt = require('jsonwebtoken');
 const Submission = require("../models/submission")
 const sendEmail = require("../utils/sendEmail");
+const { OAuth2Client } = require('google-auth-library');
 
 
 
@@ -346,4 +347,72 @@ const deleteProfile = async(req,res)=>{
 }
 
 
-module.exports = {register, login,logout,adminRegister,deleteProfile, verifyOTP};
+const googleAuth = async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) {
+      return res.status(400).json({ message: "No token provided" });
+    }
+
+    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    
+    const payload = ticket.getPayload();
+    const { email, name, picture, sub } = payload; // sub is googleId
+
+    let user = await User.findOne({ emailId: email });
+
+    if (user) {
+      if (!user.googleId || !user.avatar) {
+        user.googleId = user.googleId || sub;
+        user.avatar = user.avatar || picture;
+        await user.save();
+      }
+    } else {
+      user = await User.create({
+        firstName: name,
+        emailId: email,
+        googleId: sub,
+        avatar: picture,
+        authProvider: 'google',
+        role: "user"
+      });
+    }
+
+    const jwtToken = jwt.sign(
+      { _id: user._id, emailId: user.emailId, role: user.role },
+      process.env.JWT_KEY,
+      { expiresIn: "1h" }
+    );
+
+    res.cookie("token", jwtToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+      maxAge: 60 * 60 * 1000,
+      path: "/"
+    });
+
+    const reply = {
+      firstName: user.firstName,
+      emailId: user.emailId,
+      _id: user._id,
+      role: user.role,
+      avatar: user.avatar,
+    };
+
+    res.status(201).json({
+      message: "Logged In with Google",
+      user: reply,
+    });
+  } catch (err) {
+    console.error("❌ Google Auth Error:", err);
+    res.status(401).send("Google Authentication failed");
+  }
+};
+
+
+module.exports = {register, login,logout,adminRegister,deleteProfile, verifyOTP, googleAuth};

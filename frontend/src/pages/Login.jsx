@@ -136,9 +136,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, NavLink } from 'react-router';
-import { loginUser } from "../authSlice";
+import { loginUser, googleLogin } from "../authSlice";
 import { useEffect, useState } from 'react';
 import { clearError } from "../authSlice";
+import { GoogleLogin } from "@react-oauth/google";
 
 const loginSchema = z.object({
   emailId: z.string().email("Invalid Email"),
@@ -171,6 +172,15 @@ function Login() {
   const onSubmit = (data) => {
       console.log("FORM SUBMITTED", data); // 🔥 ADD THIS
     dispatch(loginUser(data));
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      await dispatch(googleLogin(credentialResponse.credential)).unwrap();
+      navigate('/');
+    } catch (err) {
+      console.log("Google authentication failed", err);
+    }
   };
 
   return (
@@ -481,6 +491,16 @@ function Login() {
               ) : 'Login'}
             </button>
           </form>
+
+          <div className="aj-divider" style={{ height: '1px', background: 'rgba(99,102,241,0.1)', margin: '1.75rem 0 1rem 0' }} />
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => console.log('Google authentication was unsuccessful')}
+              useOneTap={false}
+              text="continue_with"
+            />
+          </div>
 
           <div className="lp-footer">
             Don't have an account?{' '}

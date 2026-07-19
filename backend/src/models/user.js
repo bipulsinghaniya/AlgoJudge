@@ -40,7 +40,20 @@ const userSchema = new Schema({
     },
     password:{
         type:String,
-        required: true
+        required: function() {
+            return this.authProvider === 'local';
+        }
+    },
+    googleId: {
+        type: String
+    },
+    avatar: {
+        type: String
+    },
+    authProvider: {
+        type: String,
+        enum: ['local', 'google'],
+        default: 'local'
     }
 },{
     timestamps:true

@@ -165,7 +165,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, NavLink } from 'react-router';
-import { registerUser } from '../authSlice';
+import { registerUser, googleLogin } from '../authSlice';
+import { GoogleLogin } from "@react-oauth/google";
 
 const signupSchema = z.object({
   firstName: z.string().min(3, "Minimum character should be 3"),
@@ -200,6 +201,15 @@ function Signup() {
       });
     } catch (err) {
       console.log(err);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      await dispatch(googleLogin(credentialResponse.credential)).unwrap();
+      navigate('/');
+    } catch (err) {
+      console.log("Google authentication failed", err);
     }
   };
 
@@ -537,6 +547,14 @@ function Signup() {
           </form>
 
           <div className="aj-divider" />
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => console.log('Google authentication was unsuccessful')}
+              useOneTap={false}
+              text="signup_with"
+            />
+          </div>
 
           <p className="aj-footer">
             Already have an account?{' '}
