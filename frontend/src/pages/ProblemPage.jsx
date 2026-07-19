@@ -567,7 +567,7 @@ const ProblemPage = () => {
       setActiveRightTab('testcase');
     } catch (error) {
       console.error('Error running code:', error);
-      setRunResult({ success: false, error: 'Internal server error' });
+      setRunResult(error.response?.data || { success: false, error: 'Internal server error' });
       setLoading(false);
       setActiveRightTab('testcase');
     }
@@ -583,7 +583,7 @@ const ProblemPage = () => {
       setActiveRightTab('result');
     } catch (error) {
       console.error('Error submitting code:', error);
-      setSubmitResult(null);
+      setSubmitResult(error.response?.data || { accepted: false, error: 'Internal server error' });
       setLoading(false);
       setActiveRightTab('result');
     }
@@ -1141,7 +1141,7 @@ const ProblemPage = () => {
                         <div className="pp-result-meta">Runtime: {runResult.runtime} sec</div>
                         <div className="pp-result-meta">Memory: {runResult.memory} KB</div>
                         <div style={{ marginTop: 12 }}>
-                          {runResult.testCases.map((tc, i) => (
+                          {runResult.testCases?.map((tc, i) => (
                             <div key={i} className="pp-tc-card">
                               <div><strong>Input:</strong> {tc.stdin}</div>
                               <div><strong>Expected:</strong> {tc.expected_output}</div>
@@ -1153,19 +1153,25 @@ const ProblemPage = () => {
                       </div>
                     ) : (
                       <div>
-                        <div className="pp-result-title" style={{ color: '#f87171' }}>❌ Error</div>
-                        <div style={{ marginTop: 12 }}>
-                          {runResult.testCases.map((tc, i) => (
-                            <div key={i} className="pp-tc-card">
-                              <div><strong>Input:</strong> {tc.stdin}</div>
-                              <div><strong>Expected:</strong> {tc.expected_output}</div>
-                              <div><strong>Output:</strong> {tc.stdout}</div>
-                              <div className={tc.status_id == 3 ? 'pp-passed' : 'pp-failed'}>
-                                {tc.status_id == 3 ? '✓ Passed' : '✗ Failed'}
+                        <div className="pp-result-title" style={{ color: '#f87171' }}>❌ {runResult.error || 'Error'}</div>
+                        {runResult.testCases && runResult.testCases.length > 0 ? (
+                          <div style={{ marginTop: 12 }}>
+                            {runResult.testCases.map((tc, i) => (
+                              <div key={i} className="pp-tc-card">
+                                <div><strong>Input:</strong> {tc.stdin}</div>
+                                <div><strong>Expected:</strong> {tc.expected_output}</div>
+                                <div><strong>Output:</strong> {tc.stdout}</div>
+                                <div className={tc.status_id == 3 ? 'pp-passed' : 'pp-failed'}>
+                                  {tc.status_id == 3 ? '✓ Passed' : '✗ Failed'}
+                                </div>
                               </div>
-                            </div>
-                          ))}
-                        </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div style={{ marginTop: 12, color: '#f87171', whiteSpace: 'pre-wrap', fontFamily: 'monospace', fontSize: '0.85rem' }}>
+                            {runResult.compile_output || runResult.stderr || "Execution failed."}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1189,8 +1195,15 @@ const ProblemPage = () => {
                       </div>
                     ) : (
                       <div>
-                        <div className="pp-result-title" style={{ color: '#f87171' }}>❌ {submitResult.error}</div>
-                        <div className="pp-result-meta">Test Cases Passed: {submitResult.passedTestCases}/{submitResult.totalTestCases}</div>
+                        <div className="pp-result-title" style={{ color: '#f87171' }}>❌ {submitResult.error || 'Failed'}</div>
+                        {submitResult.totalTestCases !== undefined && (
+                          <div className="pp-result-meta">Test Cases Passed: {submitResult.passedTestCases}/{submitResult.totalTestCases}</div>
+                        )}
+                        {(submitResult.compile_output || submitResult.stderr) && (
+                          <div style={{ marginTop: 12, color: '#f87171', whiteSpace: 'pre-wrap', fontFamily: 'monospace', fontSize: '0.85rem' }}>
+                            {submitResult.compile_output || submitResult.stderr}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
