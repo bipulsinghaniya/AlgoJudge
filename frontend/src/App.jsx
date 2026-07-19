@@ -12,6 +12,9 @@ import AdminVideo from "./components/AdminVideo"
 import AdminDelete from "./components/AdminDelete"
 import AdminUpload from "./components/AdminUpload"
 import VerifyEmail from "./pages/VerifyEmail";
+import ForgotPassword from "./pages/ForgotPassword";
+import VerifyResetOtp from "./pages/VerifyResetOtp";
+import ResetPassword from "./pages/ResetPassword";
 
 function App(){
   
@@ -43,6 +46,10 @@ function App(){
       <Route path="/admin/video" element={isAuthenticated && user?.role === 'admin' ? <AdminVideo /> : <Navigate to="/" />} />
       <Route path="/admin/upload/:problemId" element={isAuthenticated && user?.role === 'admin' ? <AdminUpload /> : <Navigate to="/" />} />
       <Route path="/problem/:problemId" element={<ProblemPage/>}></Route>
+      
+      <Route path="/forgot-password" element={isAuthenticated ? <Navigate to="/" /> : <ForgotPassword />} />
+      <Route path="/verify-reset-otp" element={isAuthenticated ? <Navigate to="/" /> : <VerifyResetOtp />} />
+      <Route path="/reset-password" element={isAuthenticated ? <Navigate to="/" /> : <ResetPassword />} />
       
     </Routes>
   </>

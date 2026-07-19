@@ -415,4 +415,118 @@ const googleAuth = async (req, res) => {
 };
 
 
-module.exports = {register, login,logout,adminRegister,deleteProfile, verifyOTP, googleAuth};
+
+const forgotPassword = async (req, res) => {
+  try {
+    const { emailId } = req.body;
+    if (!emailId) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const user = await User.findOne({ emailId });
+    if (!user) {
+      // Returning generic message for security, preventing email enumeration
+      return res.status(200).json({ message: "If this email is registered, an OTP will be sent." });
+    }
+
+    if (user.authProvider === 'google') {
+      return res.status(400).json({ message: "This account uses Google Login. Please continue with Google." });
+    }
+
+    const cooldown = await redisClient.get(`pwd_reset_cooldown:${emailId}`);
+    if (cooldown) {
+      return res.status(400).json({ message: "Wait 60 seconds before retry" });
+    }
+    await redisClient.set(`pwd_reset_cooldown:${emailId}`, "1", { EX: 60 });
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    await redisClient.set(`pwd_reset_otp:${emailId}`, otp, { EX: 600 }); // 10 mins
+
+    await sendEmail({
+      email: emailId,
+      subject: "Password Reset OTP",
+      html: `<h2>Your Password Reset OTP is: ${otp}</h2><p>This OTP will expire in 10 minutes. If you did not request a password reset, please ignore this email.</p>`,
+    });
+
+    res.status(200).json({ message: "If this email is registered, an OTP will be sent." });
+
+  } catch (err) {
+    console.error("Forgot Password Error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const verifyResetOtp = async (req, res) => {
+  try {
+    const { emailId, otp } = req.body;
+    if (!emailId || !otp) {
+      return res.status(400).json({ message: "Email and OTP are required" });
+    }
+
+    const storedOtp = await redisClient.get(`pwd_reset_otp:${emailId}`);
+    if (!storedOtp) {
+      return res.status(400).json({ message: "OTP expired or invalid" });
+    }
+
+    if (storedOtp !== otp.toString()) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    // OTP is valid. Delete it.
+    await redisClient.del(`pwd_reset_otp:${emailId}`);
+
+    // Generate secure reset token
+    const resetToken = require('crypto').randomBytes(32).toString('hex');
+    
+    await redisClient.set(`pwd_reset_token:${resetToken}`, emailId, { EX: 900 }); // 15 mins
+
+    res.status(200).json({
+      message: "OTP verified successfully",
+      resetToken
+    });
+
+  } catch (err) {
+    console.error("Verify Reset OTP Error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { resetToken, newPassword, confirmPassword } = req.body;
+    
+    if (!resetToken || !newPassword || !confirmPassword) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ message: "Passwords do not match" });
+    }
+
+    const emailId = await redisClient.get(`pwd_reset_token:${resetToken}`);
+    if (!emailId) {
+      return res.status(400).json({ message: "Reset token is invalid or expired" });
+    }
+
+    const user = await User.findOne({ emailId });
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    await redisClient.del(`pwd_reset_token:${resetToken}`);
+
+    res.status(200).json({ message: "Password reset successfully" });
+
+  } catch (err) {
+    console.error("Reset Password Error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+module.exports = {register, login,logout,adminRegister,deleteProfile, verifyOTP, googleAuth, forgotPassword, verifyResetOtp, resetPassword};

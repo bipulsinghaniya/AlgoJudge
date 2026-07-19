@@ -480,6 +480,9 @@ function Login() {
                 </button>
               </div>
               {errors.password && <div className="lp-error-msg">{errors.password.message}</div>}
+              <div style={{ textAlign: 'right', marginTop: '8px' }}>
+                <NavLink to="/forgot-password" style={{ color: '#818cf8', fontSize: '0.75rem', textDecoration: 'none', fontWeight: 600 }}>Forgot Password?</NavLink>
+              </div>
             </div>
 
             <button type="submit" className="lp-submit-btn" disabled={loading}>

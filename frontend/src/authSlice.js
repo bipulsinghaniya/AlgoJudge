@@ -102,6 +102,48 @@ export const logoutUser = createAsyncThunk(
   }
 );
 
+export const forgotPassword = createAsyncThunk(
+  'auth/forgotPassword',
+  async (emailId, { rejectWithValue }) => {
+    try {
+      const response = await axiosClient.post('/user/forgot-password', { emailId });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to send reset OTP"
+      );
+    }
+  }
+);
+
+export const verifyResetOtp = createAsyncThunk(
+  'auth/verifyResetOtp',
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await axiosClient.post('/user/verify-reset-otp', data);
+      return response.data; // contains resetToken
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "OTP verification failed"
+      );
+    }
+  }
+);
+
+export const resetPassword = createAsyncThunk(
+  'auth/resetPassword',
+  async (data, { rejectWithValue }) => {
+    try {
+      const response = await axiosClient.post('/user/reset-password', data);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Password reset failed"
+      );
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
